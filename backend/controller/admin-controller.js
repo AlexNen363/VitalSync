@@ -18,7 +18,7 @@ const createStaff = async(req, res) => {
 
         //Validation for doctor
         if (StaffRole === "Doctor" && 
-           (!Specialization || !ConsultationFee === undefined)){
+           (!Specialization || ConsultationFee === null)){
             return res.status(400).json({
                 message: "Specialization and Consultation Fee are required for Doctors"
             });
@@ -80,7 +80,7 @@ const getStaffByID = async(req, res) => {
             message: error.message
         });
     }
-}
+};
 
 //TO UPDATE A STAFF
 const updateStaff = async (req, res) => {
