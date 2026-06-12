@@ -76,6 +76,8 @@ const createStaff = async(req, res) => {
 const getStaff = async(req, res) => {
     try {
         const filter = {};
+
+        // Filtering
         if (req.query.role) {
             filter.StaffRole = req.query.role;
         }
@@ -84,8 +86,23 @@ const getStaff = async(req, res) => {
             filter.Status = req.query.status;
         }
 
-        const staff = await Staff.find(filter);
-        res.status(200).json(staff);
+        // Pagination
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        const skip = (page - 1) * limit;
+        const staff = await Staff.find(filter)
+            .skip(skip)
+            .limit(limit);
+
+        const totalStaff = await Staff.countDocuments(filter);
+        res.status(200).json({
+            currentPage: page,
+            totalPages: Math.ceil(totalStaff / limit),
+            totalStaff,
+            staff
+        });
+
     } catch (error) {
         res.status(500).json({
             message: error.message
