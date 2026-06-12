@@ -1,9 +1,17 @@
 const { Staff, Doctor, Ambulance } = require("../models/admin-models");
+const { validationResult } = require('express-validator');
 
 
 //CRUD OPERATIONS FOR STAFF AND DOCTORS
 //TO CREATE NEW STAFF/DOCTOR
 const createStaff = async(req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            errors: errors.array()
+        });
+    }
+
     try {
         const {
             StaffName,
@@ -67,7 +75,16 @@ const createStaff = async(req, res) => {
 //TO GET ALL STAFFS
 const getStaff = async(req, res) => {
     try {
-        const staff = await Staff.find();
+        const filter = {};
+        if (req.query.role) {
+            filter.StaffRole = req.query.role;
+        }
+
+        if (req.query.status) {
+            filter.Status = req.query.status;
+        }
+
+        const staff = await Staff.find(filter);
         res.status(200).json(staff);
     } catch (error) {
         res.status(500).json({
@@ -93,8 +110,27 @@ const getStaffByID = async(req, res) => {
     }
 };
 
+//TO GET ALL DOCTORS
+const getDoctors = async (req, res) => {
+    try {
+        const doctors = await Doctor.find().populate("StaffId");
+        res.status(200).json(doctors);
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
+
 //TO UPDATE A STAFF
 const updateStaff = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            errors: errors.array()
+        });
+    }
+
     try {
         const staff = await Staff.findByIdAndUpdate(
             req.params.id,
@@ -153,6 +189,13 @@ const deactivateStaff = async (req, res) => {
 //CRUD OPERATIONS FOR AMBULANCE
 //TO CREATE AN AMBULANCE 
 const createAmbulance = async(req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            errors: errors.array()
+        });
+    }
+
     try {
         const {
             VehicleNumber,
@@ -210,6 +253,13 @@ const getAmbulanceById = async (req, res) => {
 
 //TO UPDATE AN AMBULANCE
 const updateAmbulance = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            errors: errors.array()
+        });
+    }
+
     try {
         const {
             VehicleNumber,
@@ -281,6 +331,7 @@ const deactivateAmbulance = async (req, res) => {
 exports.createStaff = createStaff;
 exports.getStaff = getStaff;
 exports.getStaffByID = getStaffByID;
+exports.getDoctors = getDoctors; 
 exports.updateStaff = updateStaff;
 exports.deactivateStaff = deactivateStaff;
 
