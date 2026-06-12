@@ -1,8 +1,16 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const dns = require('dns');
+
 require('dotenv').config();
 
 const app = express();
+
+// Fix DNS issues with MongoDB Atlas
+dns.setServers([
+    '8.8.8.8',
+    '8.8.4.4'
+]);
 
 // const AdminRoutes = require('./routes/admin-routes');
 const ReceptionistRoutes = require('./routes/receptionist-routes');
@@ -17,7 +25,7 @@ app.use(express.json());
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// Creation of Middleware
+// Routes
 // app.use(AdminRoutes);
 app.use(ReceptionistRoutes);
 // app.use(DoctorRoutes);
@@ -51,23 +59,23 @@ app.use((error, req, res, next) => {
 
 // ======================
 // DATABASE CONNECTION
-// (TEMPORARILY DISABLED)
 // ======================
 
-// mongoose.connect(process.env.MONGO_URI).then(() => {
-//     console.log('MongoDB Connected Successfully');
-//     app.listen(process.env.PORT || 5000, () => {
-//         console.log(
-//             `Server Running On Port ${process.env.PORT || 5000}`
-//         );
-//     });
-// }).catch((error) => {
-//     console.log('Database Connection Failed');
-//     console.log(error);
-// });
+mongoose.connect(process.env.MONGO_URI)
+.then(() => {
 
-// TEMP SERVER FOR DEVELOPMENT
+    console.log('MongoDB Connected Successfully');
 
-app.listen(5000, () => {
-    console.log('Server Running On Port 5000');
+    app.listen(process.env.PORT || 5000, () => {
+        console.log(
+            `Server Running On Port ${process.env.PORT || 5000}`
+        );
+    });
+
+})
+.catch((error) => {
+
+    console.log('Database Connection Failed');
+    console.log(error);
+
 });
