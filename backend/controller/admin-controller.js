@@ -1,4 +1,4 @@
-const { Staff, Doctor, Ambulance } = require("../models/admin-model");
+const { Staff, Doctor, Ambulance } = require("../models/admin-models");
 
 
 //CRUD OPERATIONS FOR STAFF AND DOCTORS
@@ -16,9 +16,19 @@ const createStaff = async(req, res) => {
             ConsultationFee
         } = req.body;
 
+        //Duplicate check
+        const existingStaff = await Staff.findOne({
+            $or: [{ StaffEmail }, { StaffUsername }]
+        });
+
+        if (existingStaff) {
+            return res.status(400).json({
+                message: "Email or Username already exists"
+            });
+        }
+
         //Validation for doctor
-        if (StaffRole === "Doctor" && 
-           (!Specialization || ConsultationFee === null)){
+        if (StaffRole === "Doctor" && (!Specialization || ConsultationFee == null)){
             return res.status(400).json({
                 message: "Specialization and Consultation Fee are required for Doctors"
             });
@@ -43,8 +53,9 @@ const createStaff = async(req, res) => {
         }
 
         res.status(201).json({
+            success: true,
             message: `${StaffRole} created successfully`,
-            staff
+            data: staff
         });
     } catch (error) {
         res.status(500).json({
