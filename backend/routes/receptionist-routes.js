@@ -9,7 +9,8 @@ const {
     generateBill,
     requestAmbulance,
     getAppointments,
-    updateAppointmentStatus
+    updateAppointmentStatus,
+    getAvailableDoctors
 } = require("../controller/receptionist-controller");
 // ======================
 // PATIENT ROUTES
@@ -41,5 +42,14 @@ router.post("/generateBill", generateBill);
 // ======================
 
 router.post("/requestAmbulance", requestAmbulance);
+
+// ======================
+// DOCTOR AVAILABILITY
+// ======================
+
+router.get(
+    "/availableDoctors",
+    getAvailableDoctors
+);
 
 module.exports = router;

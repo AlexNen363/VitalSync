@@ -5,6 +5,8 @@ const {
     AmbulanceRequest
 } = require("../models/receptionist-models");
 
+const Doctor = require("../models/doctor-models");
+
 // ======================
 // REGISTER PATIENT
 // ======================
@@ -48,23 +50,47 @@ const registerPatient = async (req, res) => {
 // ======================
 
 const searchPatient = async (req, res) => {
+
     try {
-        const patientName = req.query.patientName;
-        if (!patientName) {
-    return res.status(400).json({
-        success: false,
-        message: "Patient name is required"
-    });
-}
+
+        const patientName = req.query.patientName || "";
+
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        const skip = (page - 1) * limit;
 
         const patients = await Patient.find({
-            patientName: { $regex: patientName, $options: "i" }
+            patientName: {
+                $regex: patientName,
+                $options: "i"
+            }
+        })
+        .skip(skip)
+        .limit(limit);
+
+        const totalPatients = await Patient.countDocuments({
+            patientName: {
+                $regex: patientName,
+                $options: "i"
+            }
         });
 
-        res.status(200).json({ success: true, patients });
+        res.status(200).json({
+            success: true,
+            currentPage: page,
+            totalPages: Math.ceil(totalPatients / limit),
+            totalPatients,
+            patients
+        });
 
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
     }
 };
 
@@ -215,6 +241,39 @@ const updateAppointmentStatus = async (req, res) => {
     }
 };
 
+// ======================
+// GET AVAILABLE DOCTORS
+// ======================
+
+const getAvailableDoctors = async (req, res) => {
+
+    try {
+
+        const specialization = req.query.specialization || "";
+
+        const doctors = await Doctor.find({
+            Specialization: {
+                $regex: specialization,
+                $options: "i"
+            },
+            AvailabilityStatus: "Available"
+        });
+
+        res.status(200).json({
+            success: true,
+            doctors
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
+    }
+};
+
 module.exports = {
     registerPatient,
     searchPatient,
@@ -222,5 +281,6 @@ module.exports = {
     generateBill,
     requestAmbulance,
     getAppointments,
-    updateAppointmentStatus
+    updateAppointmentStatus,
+    getAvailableDoctors
 };
