@@ -7,7 +7,7 @@ const app = express();
 
 //const AdminRoutes = require('./routes/admin-routes');
 //const ReceptionistRoutes = require('./routes/receptionist-routes');
-const DoctorRoutes = require('./routes/doctor-routes');
+// const DoctorRoutes = require('./routes/doctor-routes');
 const PharmacistRoutes = require('./routes/pharmacist-routes');
 const LabTechRoutes = require('./routes/labtech-routes');
 
@@ -19,9 +19,9 @@ const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false }));
 
 //Creation of Middleware
-app.use(AdminRoutes);
-app.use(ReceptionistRoutes);
-app.use(DoctorRoutes);
+// app.use(AdminRoutes);
+// app.use(ReceptionistRoutes);
+// app.use(DoctorRoutes);
 app.use(PharmacistRoutes);
 app.use(LabTechRoutes);
 
