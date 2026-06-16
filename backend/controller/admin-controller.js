@@ -1,6 +1,122 @@
 const { Staff, Doctor, Ambulance } = require("../models/admin-models");
 const { validationResult } = require('express-validator');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
+
+//AUTHENTICATION CONTROLLER
+//TO REGISTER A USER 
+const register = async (req, res, next) => {
+    const {
+        StaffName,
+        StaffPhone,
+        StaffEmail,
+        StaffUsername,
+        StaffPassword,
+        StaffRole,
+        Specialization,
+        ConsultationFee
+    } = req.body;
+
+    try {
+        const existingUser = await Staff.findOne({
+            StaffUsername
+        });
+
+        if (existingUser) {
+            return next({
+                code: 400,
+                message: "Username already exists"
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(StaffPassword, 12);
+        const staff = new Staff({
+            StaffName,
+            StaffPhone,
+            StaffEmail,
+            StaffUsername,
+            StaffPassword: hashedPassword,
+            StaffRole
+        });
+
+        await staff.save();
+        if (StaffRole === "Doctor") {
+            const { Doctor } = require("../models/admin-models");
+            const doctor = new Doctor({
+                StaffId: staff._id,
+                Specialization,
+                ConsultationFee
+            });
+
+            await doctor.save();
+        }
+
+        res.status(201).json({
+            success: true,
+            message: `${StaffRole} registered successfully`,
+            staffId: staff._id,
+            username: staff.StaffUsername
+        });
+
+    } catch (error) {
+        return next({
+            code: 500,
+            message: "Unable to register user"
+        });
+    }
+};
+
+//USER LOGIN
+const login = async (req, res, next) => {
+    const { StaffUsername, StaffPassword } = req.body;
+    try {
+        const existingUser = await Staff.findOne({ StaffUsername });
+        if (!existingUser) {
+            return next({
+                code: 401,
+                message: "Invalid Username"
+            });
+        }
+
+        const isValidPassword = await bcrypt.compare(
+            StaffPassword,
+            existingUser.StaffPassword
+        )
+
+        if (!isValidPassword) {
+            return next({
+                code: 401,
+                message: "Invalid Password"
+            })
+        }
+
+        const token = jwt.sign({
+            userId: existingUser._id,
+            username: existingUser.StaffUsername,
+            role: existingUser.StaffRole
+        },
+        process.env.JWT_SECRET,
+        {
+            expiresIn: "8h"
+        }
+    );
+
+    res.json({
+        success: true,
+        token,
+        username: existingUser.StaffUsername,
+        role: existingUser.StaffRole
+    });
+    } catch (error) {
+        return next ({
+            code: 500,
+            message: "Login Failed!"
+        });
+    }
+};
+
+//==========================================================================
 
 //CRUD OPERATIONS FOR STAFF AND DOCTORS
 //TO CREATE NEW STAFF/DOCTOR
@@ -26,28 +142,32 @@ const createStaff = async(req, res) => {
 
         //Duplicate check
         const existingStaff = await Staff.findOne({
-            $or: [{ StaffEmail }, { StaffUsername }]
+            $or: [{ StaffEmail }, { StaffUsername }, { StaffPhone }]
         });
 
         if (existingStaff) {
             return res.status(400).json({
-                message: "Email or Username already exists"
+                message: "Email, Username or Phone Number already exists"
             });
         }
 
         //Validation for doctor
         if (StaffRole === "Doctor" && (!Specialization || ConsultationFee == null)){
             return res.status(400).json({
+                success: false,
                 message: "Specialization and Consultation Fee are required for Doctors"
             });
         } 
+
+        //Hash Password
+        const hashedPassword = await bcrypt.hash(StaffPassword, 12);
 
         const staff = await Staff.create({
             StaffName,
             StaffPhone,
             StaffEmail,
             StaffUsername,
-            StaffPassword,
+            StaffPassword: hashedPassword,
             StaffRole
         });
 
@@ -60,13 +180,17 @@ const createStaff = async(req, res) => {
             });
         }
 
+        const staffResponse = staff.toObject();
+        delete staffResponse.StaffPassword;
+
         res.status(201).json({
             success: true,
             message: `${StaffRole} created successfully`,
-            data: staff
+            data: staffResponse
         });
     } catch (error) {
         res.status(500).json({
+            success: false,
             message: error.message
         });
     }
@@ -173,7 +297,6 @@ const updateStaff = async (req, res) => {
     }
 };
 
-//COMPLETE DELETION OR ONLY JUST DEACTIVATION?
 //TO DEACTIVATE A STAFF
 const deactivateStaff = async (req, res) => {
     try {
@@ -191,6 +314,37 @@ const deactivateStaff = async (req, res) => {
 
         res.status(200).json({
             message: "Staff deactivated successfully",
+            staff
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
+
+//TO ACTIVATE A STAFF
+const activateStaff = async (req, res) => {
+    try {
+        const staff = await Staff.findByIdAndUpdate(
+            req.params.id,
+            {
+                Status: "Active"
+            },
+            {
+                new: true
+            }
+        );
+
+        if (!staff) {
+            return res.status(404).json({
+                message: "Staff not found"
+            });
+        }
+
+        res.status(200).json({
+            message: "Staff activated successfully",
             staff
         });
 
@@ -343,7 +497,41 @@ const deactivateAmbulance = async (req, res) => {
     }
 };
 
+//TO ACTIVATE AN AMBULANCE
+const activateAmbulance = async (req, res) => {
+    try {
+        const ambulance = await Ambulance.findByIdAndUpdate(
+            req.params.id,
+            {
+                Status: "Available"
+            },
+            {
+                new: true
+            }
+        );
+
+        if (!ambulance) {
+            return res.status(404).json({
+                message: "Ambulance not found"
+            });
+        }
+
+        res.status(200).json({
+            message: "Ambulance activated successfully",
+            ambulance
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
+
 //==========================================================================
+
+exports.register = register;
+exports.login = login;
 
 exports.createStaff = createStaff;
 exports.getStaff = getStaff;
@@ -351,9 +539,11 @@ exports.getStaffByID = getStaffByID;
 exports.getDoctors = getDoctors; 
 exports.updateStaff = updateStaff;
 exports.deactivateStaff = deactivateStaff;
+exports.activateStaff = activateStaff;
 
 exports.createAmbulance = createAmbulance;
 exports.getAmbulances = getAmbulances;
 exports.getAmbulanceById = getAmbulanceById;
 exports.updateAmbulance = updateAmbulance;
 exports.deactivateAmbulance = deactivateAmbulance;
+exports.activateAmbulance = activateAmbulance;
