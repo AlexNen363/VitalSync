@@ -12,11 +12,11 @@ dns.setServers([
     '8.8.4.4'
 ]);
 
-// const AdminRoutes = require('./routes/admin-routes');
+const AdminRoutes = require('./routes/admin-routes');
 const ReceptionistRoutes = require('./routes/receptionist-routes');
-// const DoctorRoutes = require('./routes/doctor-routes');
-// const PharmacistRoutes = require('./routes/pharmacist-routes');
-// const LabTechRoutes = require('./routes/labtech-routes');
+const DoctorRoutes = require('./routes/doctor-routes');
+const PharmacistRoutes = require('./routes/pharmacist-routes');
+const LabTechRoutes = require('./routes/labtech-routes');
 
 // Parse JSON Data
 app.use(express.json());
@@ -25,12 +25,12 @@ app.use(express.json());
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// Routes
-// app.use(AdminRoutes);
+// Creation of Middleware
+app.use(AdminRoutes);
 app.use(ReceptionistRoutes);
-// app.use(DoctorRoutes);
-// app.use(PharmacistRoutes);
-// app.use(LabTechRoutes);
+app.use(DoctorRoutes);
+app.use(PharmacistRoutes);
+app.use(LabTechRoutes);
 
 // ======================
 // HOME ROUTE
@@ -67,9 +67,11 @@ mongoose.connect(process.env.MONGO_URI)
     console.log('MongoDB Connected Successfully');
 
     app.listen(process.env.PORT || 5000, () => {
+
         console.log(
             `Server Running On Port ${process.env.PORT || 5000}`
         );
+
     });
 
 })
