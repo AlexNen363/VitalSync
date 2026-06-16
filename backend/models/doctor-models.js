@@ -1,78 +1,109 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const doctorSchema = new mongoose.Schema(
-    {
-        UserId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User',
-            required: true
-        },
 
-        DoctorID: {
-            type: String,
-            required: true,
-            unique: true
-        },
-
-        DoctorName: {
-            type: String,
-            required: [true, 'Doctor name is required'],
-            trim: true
-        },
-
-        Specialization: {
-            type: String,
-            required: [true, 'Specialization is required'],
-            trim: true
-            // e.g. "Cardiology", "Neurology", "General Medicine"
-        },
-
-        Designation: {
-            type: String,
-            required: [true, 'Designation is required'],
-            trim: true
-            // e.g. "Senior Consultant", "Resident Doctor"
-        },
-
-        DateOfJoining: {
-            type: Date,
-            required: [true, 'Date of joining is required']
-        },
-
-        DepartmentId: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Department',
-            required: [true, 'Department is required']
-        },
-
-        ContactNumber: {
-            type: String,
-            required: [true, 'Contact number is required'],
-            trim: true
-        },
-
-        AvailableDays: {
-            type: [String],
-            default: []
-            // e.g. ["Monday", "Wednesday", "Friday"]
-        },
-
-        AvailableTimeSlots: {
-            type: [String],
-            default: []
-            // e.g. ["09:00-11:00", "14:00-16:00"]
-        },
-
-        IsActive: {
-            type: Boolean,
-            default: true
-        }
+// Appointment Schema
+const appointmentSchema = new mongoose.Schema({
+    patientId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Patient",
+        required: true
     },
-    {
-        timestamps: true   // adds createdAt and updatedAt
+    doctorId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Doctor",
+        required: true
+    },
+    appointmentDate: {
+        type: Date,
+        required: true
+    },
+    status: {
+        type: String,
+        enum: ["Scheduled", "Completed", "Cancelled"],
+        default: "Scheduled"
     }
-);
+});
 
-const Doctor = mongoose.model('Doctor', doctorSchema);
 
-module.exports = Doctor;
+// Consultation Schema
+const consultationSchema = new mongoose.Schema({
+    patientId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Patient",
+        required: true
+    },
+    doctorId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Doctor",
+        required: true
+    },
+    notes: {
+        type: String,
+        required: true
+    },
+    date: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+
+// Lab Test Schema
+const labTestSchema = new mongoose.Schema({
+    patientId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Patient",
+        required: true
+    },
+    doctorId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Doctor",
+        required: true
+    },
+    testName: {
+        type: String,
+        required: true
+    },
+    status: {
+        type: String,
+        default: "Pending"
+    }
+});
+
+
+// Prescription Schema
+const prescriptionSchema = new mongoose.Schema({
+    patientId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Patient",
+        required: true
+    },
+    doctorId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Doctor",
+        required: true
+    },
+    medicines: [{
+        medicineName: String,
+        dosage: String,
+        frequency: String,
+        duration: String
+    }],
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+
+const Appointment = mongoose.model("Appointment", appointmentSchema);
+const Consultation = mongoose.model("Consultation", consultationSchema);
+const LabTest = mongoose.model("LabTest", labTestSchema);
+const Prescription = mongoose.model("Prescription", prescriptionSchema);
+
+module.exports = {
+    Appointment,
+    Consultation,
+    LabTest,
+    Prescription
+};
