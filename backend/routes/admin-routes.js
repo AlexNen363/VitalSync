@@ -1,11 +1,23 @@
 const express = require('express');
 const { check } = require('express-validator');
 const router = express.Router();
+
 const adminController = require('../controller/admin-controller');
+const { checkAuth, checkRole } = require('../middlewares/admin-middleware')
+
+
+//AUTHENTICATION AND AUTHORIZATION ROUTES
+//Register Staff
+router.post('/api/auth/register', adminController.register);
+
+//Login Staff
+router.post('/api/auth/login', adminController.login);
+
+//==============================================================================================
 
 //STAFF ROUTES
 //Create Staff/Doctor
-router.post('/api/staff', 
+router.post('/api/staff', checkAuth, checkRole('Administrator'),
     [check('StaffName')
         .trim()
         .notEmpty()
@@ -60,16 +72,16 @@ router.post('/api/staff',
     ], adminController.createStaff);
 
 //Get ALL Staff
-router.get('/api/staff', adminController.getStaff);
+router.get('/api/staff', checkAuth, checkRole("Administrator", "Receptionist"), adminController.getStaff);
 
 //Get Staff by ID
-router.get('/api/staff/:id', adminController.getStaffByID);
+router.get('/api/staff/:id', checkAuth, checkRole("Administrator", "Receptionist"), adminController.getStaffByID);
 
 //Get ALL Doctors
-router.get('/api/doctors', adminController.getDoctors);
+router.get('/api/doctors', checkAuth, checkRole("Administrator", "Receptionist"), adminController.getDoctors);
 
 //Update Staff
-router.put('/api/staff/:id', 
+router.put('/api/staff/:id', checkAuth, checkRole("Administrator"),
     [check('StaffPhone')
         .trim()
         .optional()
@@ -96,12 +108,16 @@ router.put('/api/staff/:id',
     ], adminController.updateStaff);
 
 //Deactivate Staff
-router.patch('/api/staff/:id/deactivate', adminController.deactivateStaff);
+router.patch('/api/staff/:id/deactivate', checkAuth, checkRole("Administrator"), adminController.deactivateStaff);
 
+//Activate Staff
+router.patch('/api/staff/:id/activate', checkAuth, checkRole("Administrator"), adminController.activateStaff);
+
+//==============================================================================================
 
 //AMBULANCE ROUTES
-// Create Ambulance
-router.post("/api/ambulance", 
+//Create Ambulance
+router.post('/api/ambulance', checkAuth, checkRole("Administrator"),
     [check('VehicleNumber')
         .trim()
         .notEmpty()
@@ -120,14 +136,14 @@ router.post("/api/ambulance",
         .withMessage('Phone number must be 10 digits'),
     ], adminController.createAmbulance);
 
-// Get All Ambulances
-router.get("/api/ambulance", adminController.getAmbulances);
+//Get All Ambulances
+router.get('/api/ambulance', checkAuth, checkRole("Administrator", "Receptionist"), adminController.getAmbulances);
 
-// Get Ambulance By ID
-router.get("/api/ambulance/:id", adminController.getAmbulanceById);
+//Get Ambulance By ID
+router.get('/api/ambulance/:id', checkAuth, checkRole("Administrator", "Receptionist"), adminController.getAmbulanceById);
 
-// Update Ambulance
-router.put("/api/ambulance/:id", 
+//Update Ambulance
+router.put('/api/ambulance/:id', checkAuth, 
     [check('DriverPhone')
         .optional()
         .trim()
@@ -137,8 +153,11 @@ router.put("/api/ambulance/:id",
         .withMessage('Phone number must be 10 digits'),
     ], adminController.updateAmbulance);
 
-// Deactivate Ambulance
-router.patch("/api/ambulance/:id/deactivate", adminController.deactivateAmbulance);
+//Deactivate Ambulance
+router.patch('/api/ambulance/:id/deactivate', checkAuth, checkRole("Administrator"), adminController.deactivateAmbulance);
+
+//Activate Ambulance
+router.patch('/api/ambulance/:id/activate', checkAuth, checkRole("Administrator"), adminController.activateAmbulance);
 
 
 module.exports = router;
