@@ -1,6 +1,6 @@
 const HttpError = require('../models/http-error');
 const { validationResult } = require('express-validator');
-const Doctor = require('../models/Doctor');
+const Doctor = require('../models/doctor-models');
 const { v4: uuidv4 } = require('uuid');
 
 // ===============================================
@@ -14,7 +14,6 @@ const getDoctors = async (req, res, next) => {
             success: true,
             data: doctors
         });
-
     } catch (err) {
         console.log('GET DOCTORS ERROR:', err);
         return res.status(500).json({
