@@ -3,6 +3,11 @@ const express = require("express");
 const router = express.Router();
 
 const {
+    checkAuth,
+    checkRole
+} = require("../middlewares/admin-middleware");
+
+const {
     registerPatient,
     searchPatient,
     bookAppointment,
@@ -16,32 +21,63 @@ const {
 // PATIENT ROUTES
 // ======================
 
-router.post("/registerPatient", registerPatient);
+router.post(
+    "/registerPatient",
+    checkAuth,
+    checkRole("Receptionist"),
+    registerPatient
+);
 
-router.get("/searchPatient", searchPatient);
+router.get(
+    "/searchPatient",
+    checkAuth,
+    checkRole("Receptionist"),
+    searchPatient
+);
 
 // ======================
 // APPOINTMENT ROUTES
 // ======================
 
-router.post("/bookAppointment", bookAppointment);
-router.get("/appointments", getAppointments);
+router.post(
+    "/bookAppointment",
+    checkAuth,
+    checkRole("Receptionist"),
+    bookAppointment
+);
+router.get(
+    "/appointments",
+    checkAuth,
+    checkRole("Receptionist"),
+    getAppointments
+);
 router.patch(
     "/appointments/:id/status",
+    checkAuth,
+    checkRole("Receptionist"),
     updateAppointmentStatus
 );
-
 // ======================
 // BILLING ROUTES
 // ======================
 
-router.post("/generateBill", generateBill);
+router.post(
+    "/generateBill",
+    checkAuth,
+    checkRole("Receptionist"),
+    generateBill
+);
 
 // ======================
 // AMBULANCE ROUTES
 // ======================
 
-router.post("/requestAmbulance", requestAmbulance);
+router.post(
+    "/requestAmbulance",
+    checkAuth,
+    checkRole("Receptionist"),
+    requestAmbulance
+);
 
 // ======================
 // DOCTOR AVAILABILITY
@@ -49,6 +85,8 @@ router.post("/requestAmbulance", requestAmbulance);
 
 router.get(
     "/availableDoctors",
+    checkAuth,
+    checkRole("Receptionist"),
     getAvailableDoctors
 );
 
