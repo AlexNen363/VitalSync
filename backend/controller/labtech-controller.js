@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { validationResult } = require('express-validator');
 const HttpError = require('../models/http-error');
-const LabTest = require('../models/lab-test');
+const LabTest = require('../models/labtech-models');
 
 // UC-LAB-01 (Step 1): View all pending lab tests
 const getPendingTests = async (req, res, next) => {

@@ -1,7 +1,7 @@
 const express = require('express');
 const router  = express.Router();
 const { check } = require('express-validator');
-const pharmacistController = require('../controllers/pharmacist-controller');
+const pharmacistController = require('../controller/pharmacist-controller');
 
 // ── FUNCTION 1 : Manage Medicine Inventory ────────────────────────────────────
 
