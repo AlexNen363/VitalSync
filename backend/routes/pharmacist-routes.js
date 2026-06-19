@@ -68,58 +68,80 @@ router.get(
     pharmacistController.getPrescriptionById
 );
 
+// Step 2 — Check medicine availability
+router.get(
+    '/prescription/:prescriptionid/availability',
+    pharmacistController.checkMedicineAvailability
+);
+
+// Steps 3 & 4 — Dispense medicines and update inventory
 router.post(
     '/prescription/:prescriptionid/dispense',
     [
-        check('PharmacistId').notEmpty().withMessage('Pharmacist ID is required')
+        check('PharmacistId')
+            .notEmpty()
+            .withMessage('Pharmacist ID is required')
     ],
     pharmacistController.dispenseMedicines
 );
 
-// ── FUNCTION 4 : Schedule Medicine Reminders ─────────────────────────────────
+// ── UC-PHARM-02: Configure Medicine Reminder ─────────────────────────────────
 
+// Create reminder — medicine details + dosage timing + duration
 router.post(
     '/prescription/:prescriptionid/reminders',
     [
-        check('MedicineName').notEmpty().withMessage('Medicine name is required'),
-        check('Dosage').notEmpty().withMessage('Dosage is required'),
-        check('Times').isArray({ min: 1 }).withMessage('At least one reminder time is required'),
-        check('StartDate').isISO8601().withMessage('A valid start date is required (YYYY-MM-DD)'),
-        check('DurationDays').isInt({ min: 1 }).withMessage('Duration must be at least 1 day')
+        check('MedicineName')
+            .notEmpty()
+            .withMessage('Medicine name is required'),
+
+        check('Dosage')
+            .notEmpty()
+            .withMessage('Dosage is required'),
+
+        check('Times')
+            .isArray({ min: 1 })
+            .withMessage('At least one reminder time is required'),
+
+        check('StartDate')
+            .notEmpty()
+            .isISO8601()
+            .withMessage('A valid start date is required (YYYY-MM-DD)'),
+
+        check('DurationDays')
+            .notEmpty()
+            .isInt({ min: 1 })
+            .withMessage('Duration must be at least 1 day')
     ],
     pharmacistController.createMedicineReminder
 );
 
+// Get all reminders for a prescription
 router.get(
     '/prescription/:prescriptionid/reminders',
     pharmacistController.getRemindersByPrescription
 );
 
+// Update or deactivate a reminder
 router.put(
     '/reminders/:reminderid',
     [
-        check('DurationDays').optional().isInt({ min: 1 }).withMessage('Duration must be at least 1 day'),
-        check('Times').optional().isArray({ min: 1 }).withMessage('At least one reminder time is required'),
-        check('IsActive').optional().isBoolean().withMessage('IsActive must be true or false')
+        check('DurationDays')
+            .optional()
+            .isInt({ min: 1 })
+            .withMessage('Duration must be at least 1 day'),
+
+        check('Times')
+            .optional()
+            .isArray({ min: 1 })
+            .withMessage('At least one reminder time is required'),
+
+        check('IsActive')
+            .optional()
+            .isBoolean()
+            .withMessage('IsActive must be true or false')
     ],
     pharmacistController.updateReminder
-);
-
-// ── FUNCTION 5 : Monitor Medicine Availability ───────────────────────────────
-
-router.get(
-    '/medicines/monitor/low-stock',
-    pharmacistController.getLowStockMedicines
-);
-
-router.get(
-    '/medicines/monitor/expiring',          // optional ?days=30 query param
-    pharmacistController.getExpiringMedicines
-);
-
-router.get(
-    '/prescription/:prescriptionid/availability',
-    pharmacistController.checkMedicineAvailability
 );
 
 module.exports = router;

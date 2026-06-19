@@ -37,12 +37,6 @@ const medicineSchema = new Schema({
         required: true
     },
 
-    ReorderLevel: {
-        type: Number,
-        required: true,
-        default: 10          // alert when stock falls below this
-    },
-
     IsActive: {
         type: Boolean,
         default: true
