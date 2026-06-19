@@ -1,6 +1,5 @@
-const HttpError            = require('../models/http-error');
 const { validationResult } = require('express-validator');
-const mongoose             = require('mongoose');
+const mongoose = require('mongoose');
 const { Medicine, Prescription, Reminder } = require('../models/pharmacist-models');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -15,8 +14,10 @@ const getAllMedicines = async (req, res, next) => {
     try {
         medicines = await Medicine.find({ IsActive: true });
     } catch (err) {
-        return next(new HttpError('Fetching medicines failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Fetching medicines failed, please try again'
+    });
+}
 
     res.status(200).json({
         medicines: medicines.map(m => m.toObject({ getters: true }))
@@ -33,12 +34,16 @@ const getMedicineById = async (req, res, next) => {
     try {
         medicine = await Medicine.findById(medicineId);
     } catch (err) {
-        return next(new HttpError('Fetching medicine failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Fetching medicines failed, please try again'
+    });
+}
 
     if (!medicine) {
-        return next(new HttpError('Could not find a medicine for the given ID', 404));
-    }
+    return res.status(404).json({
+        message: 'Could not find a medicine for the given ID'
+    });
+}
 
     res.status(200).json({ medicine: medicine.toObject({ getters: true }) });
 };
@@ -49,8 +54,10 @@ const addMedicine = async (req, res, next) => {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return next(new HttpError(errors.array()[0].msg, 422));
-    }
+    return res.status(422).json({
+        message: errors.array()[0].msg
+    });
+}
 
     const {
         MedicineCode,
@@ -76,8 +83,10 @@ const addMedicine = async (req, res, next) => {
     try {
         await newMedicine.save();
     } catch (err) {
-        return next(new HttpError('Adding medicine failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Adding medicine failed, please try again'
+    });
+}
 
     res.status(201).json({
         message:  'Medicine added to inventory successfully',
@@ -95,20 +104,26 @@ const deleteMedicine = async (req, res, next) => {
     try {
         medicine = await Medicine.findById(medicineId);
     } catch (err) {
-        return next(new HttpError('Fetching medicine failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Fetching medicines failed, please try again'
+    });
+}
 
     if (!medicine) {
-        return next(new HttpError('Could not find a medicine for the given ID', 404));
-    }
+    return res.status(404).json({
+        message: 'Could not find a medicine for the given ID'
+    });
+}
 
     medicine.IsActive = false;
 
     try {
         await medicine.save();
     } catch (err) {
-        return next(new HttpError('Deleting medicine failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Deleting medicine failed, please try again'
+    });
+}
 
     res.status(200).json({ message: 'Medicine removed from inventory successfully' });
 };
@@ -123,8 +138,10 @@ const updateMedicine = async (req, res, next) => {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return next(new HttpError(errors.array()[0].msg, 422));
-    }
+    return res.status(422).json({
+        message: errors.array()[0].msg
+    });
+}
 
     const medicineId = req.params.medicineid;
 
@@ -132,12 +149,16 @@ const updateMedicine = async (req, res, next) => {
     try {
         medicine = await Medicine.findById(medicineId);
     } catch (err) {
-        return next(new HttpError('Fetching medicine failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Fetching medicines failed, please try again'
+    });
+}
 
     if (!medicine) {
-        return next(new HttpError('Could not find a medicine for the given ID', 404));
-    }
+    return res.status(404).json({
+        message: 'Could not find a medicine for the given ID'
+    });
+}
 
     if (req.body.MedicineName)  medicine.MedicineName  = req.body.MedicineName;
     if (req.body.Category)      medicine.Category      = req.body.Category;
@@ -148,8 +169,10 @@ const updateMedicine = async (req, res, next) => {
     try {
         await medicine.save();
     } catch (err) {
-        return next(new HttpError('Updating medicine failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Updating medicine failed, please try again'
+    });
+}
 
     res.status(200).json({
         message:  'Medicine updated successfully',
@@ -163,8 +186,10 @@ const updateMedicineStock = async (req, res, next) => {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return next(new HttpError(errors.array()[0].msg, 422));
-    }
+    return res.status(422).json({
+        message: errors.array()[0].msg
+    });
+}
 
     const medicineId = req.params.medicineid;
 
@@ -172,12 +197,16 @@ const updateMedicineStock = async (req, res, next) => {
     try {
         medicine = await Medicine.findById(medicineId);
     } catch (err) {
-        return next(new HttpError('Fetching medicine failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Fetching medicine failed, please try again'
+    });
+}
 
     if (!medicine) {
-        return next(new HttpError('Could not find a medicine for the given ID', 404));
-    }
+    return res.status(404).json({
+        message: 'Could not find a medicine for the given ID'
+    });
+}
 
     const { AdjustmentType, Quantity } = req.body;
     // AdjustmentType: "ADD" to restock, "SUBTRACT" to manually deduct
@@ -186,18 +215,24 @@ const updateMedicineStock = async (req, res, next) => {
         medicine.StockQuantity += parseInt(Quantity);
     } else if (AdjustmentType === 'SUBTRACT') {
         if (medicine.StockQuantity < parseInt(Quantity)) {
-            return next(new HttpError('Insufficient stock for the requested deduction', 400));
-        }
+    return res.status(400).json({
+        message: 'Insufficient stock for the requested deduction'
+    });
+}
         medicine.StockQuantity -= parseInt(Quantity);
     } else {
-        return next(new HttpError('AdjustmentType must be ADD or SUBTRACT', 422));
+        return res.status(422).json({
+    message: 'AdjustmentType must be ADD or SUBTRACT'
+});
     }
 
     try {
         await medicine.save();
     } catch (err) {
-        return next(new HttpError('Updating stock failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Updating stock failed, please try again'
+    });
+}
 
     res.status(200).json({
         message:       'Medicine stock updated successfully',
@@ -220,12 +255,16 @@ const getPrescriptionById = async (req, res, next) => {
     try {
         prescription = await Prescription.findById(prescriptionId);
     } catch (err) {
-        return next(new HttpError('Fetching prescription failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Fetching prescription failed, please try again'
+    });
+}
 
     if (!prescription) {
-        return next(new HttpError('Could not find a prescription for the given ID', 404));
-    }
+    return res.status(404).json({
+        message: 'Could not find a prescription for the given ID'
+    });
+}
 
     res.status(200).json({ prescription: prescription.toObject({ getters: true }) });
 };
@@ -235,9 +274,11 @@ const dispenseMedicines = async (req, res, next) => {
     console.log("POST request — dispense medicines");
 
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return next(new HttpError(errors.array()[0].msg, 422));
-    }
+        if (!errors.isEmpty()) {
+    return res.status(422).json({
+        message: errors.array()[0].msg
+    });
+}
 
     const prescriptionId = req.params.prescriptionid;
 
@@ -245,16 +286,22 @@ const dispenseMedicines = async (req, res, next) => {
     try {
         prescription = await Prescription.findById(prescriptionId);
     } catch (err) {
-        return next(new HttpError('Fetching prescription failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Fetching prescription failed, please try again'
+    });
+}
 
     if (!prescription) {
-        return next(new HttpError('Could not find a prescription for the given ID', 404));
-    }
+    return res.status(404).json({
+        message: 'Could not find a prescription for the given ID'
+    });
+}
 
     if (prescription.IsDispensed) {
-        return next(new HttpError('Medicines for this prescription have already been dispensed', 400));
-    }
+    return res.status(400).json({
+        message: 'Medicines for this prescription have already been dispensed'
+    });
+}
 
     // Validate all stock levels before touching anything
     const medicineRecords = [];
@@ -265,8 +312,10 @@ const dispenseMedicines = async (req, res, next) => {
         try {
             inventoryItem = await Medicine.findById(med.MedicineId);
         } catch (err) {
-            return next(new HttpError('Fetching medicine inventory failed, please try again', 500));
-        }
+    return res.status(500).json({
+        message: 'Fetching medicine inventory failed, please try again'
+    });
+}
 
         if (!inventoryItem || inventoryItem.StockQuantity < med.Quantity) {
             shortages.push({
@@ -313,16 +362,19 @@ const dispenseMedicines = async (req, res, next) => {
 
         await sess.commitTransaction();
 
-        res.status(200).json({
+        return res.status(200).json({
             message:        'Medicines dispensed successfully and inventory updated',
             PrescriptionId: prescriptionId,
             DispensedItems: dispensedItems
         });
 
     } catch (err) {
-        await sess.abortTransaction();
-        return next(new HttpError('Dispensing medicines failed, please try again', 500));
-    } finally {
+    await sess.abortTransaction();
+
+    return res.status(500).json({
+        message: 'Dispensing medicines failed, please try again'
+    });
+} finally {
         sess.endSession();
     }
 };
@@ -337,8 +389,10 @@ const createMedicineReminder = async (req, res, next) => {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return next(new HttpError(errors.array()[0].msg, 422));
-    }
+    return res.status(422).json({
+        message: errors.array()[0].msg
+    });
+}
 
     const prescriptionId = req.params.prescriptionid;
 
@@ -346,12 +400,16 @@ const createMedicineReminder = async (req, res, next) => {
     try {
         prescription = await Prescription.findById(prescriptionId);
     } catch (err) {
-        return next(new HttpError('Fetching prescription failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Fetching prescription failed, please try again'
+    });
+}
 
     if (!prescription) {
-        return next(new HttpError('Could not find a prescription for the given ID', 404));
-    }
+    return res.status(404).json({
+        message: 'Could not find a prescription for the given ID'
+    });
+}
 
     const { MedicineName, Dosage, Times, StartDate, DurationDays } = req.body;
 
@@ -376,10 +434,12 @@ const createMedicineReminder = async (req, res, next) => {
     try {
         await newReminder.save();
     } catch (err) {
-        return next(new HttpError('Creating reminder failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Creating reminder failed, please try again'
+    });
+}
 
-    res.status(201).json({
+    return res.status(201).json({
         message:  'Medicine reminder schedule created successfully',
         Reminder: newReminder.toObject({ getters: true })
     });
@@ -395,10 +455,12 @@ const getRemindersByPrescription = async (req, res, next) => {
     try {
         reminders = await Reminder.find({ PrescriptionId: prescriptionId });
     } catch (err) {
-        return next(new HttpError('Fetching reminders failed, please try again', 500));
+        return res.status(500).json({
+            message: 'Fetching reminders failed, please try again'
+        });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
         Reminders: reminders.map(r => r.toObject({ getters: true }))
     });
 };
@@ -409,8 +471,10 @@ const updateReminder = async (req, res, next) => {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        return next(new HttpError(errors.array()[0].msg, 422));
-    }
+    return res.status(422).json({
+        message: errors.array()[0].msg
+    });
+}
 
     const reminderId = req.params.reminderid;
 
@@ -418,12 +482,16 @@ const updateReminder = async (req, res, next) => {
     try {
         reminder = await Reminder.findById(reminderId);
     } catch (err) {
-        return next(new HttpError('Fetching reminder failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Fetching reminders failed, please try again'
+    });
+}
 
     if (!reminder) {
-        return next(new HttpError('Could not find a reminder for the given ID', 404));
-    }
+    return res.status(404).json({
+        message: 'Could not find a reminder for the given ID'
+    });
+}
 
     if (req.body.MedicineName) reminder.MedicineName = req.body.MedicineName;
     if (req.body.Dosage)       reminder.Dosage       = req.body.Dosage;
@@ -444,10 +512,12 @@ const updateReminder = async (req, res, next) => {
     try {
         await reminder.save();
     } catch (err) {
-        return next(new HttpError('Updating reminder failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Updating reminder failed, please try again'
+    });
+}
 
-    res.status(200).json({
+    return res.status(200).json({
         message:  'Reminder updated successfully',
         Reminder: reminder.toObject({ getters: true })
     });
@@ -468,11 +538,13 @@ const getLowStockMedicines = async (req, res, next) => {
             $expr: { $lte: ["$StockQuantity", "$ReorderLevel"] }
         });
     } catch (err) {
-        return next(new HttpError('Fetching low stock medicines failed, please try again', 500));
+        return res.status(500).json({
+            message: 'Fetching low stock medicines failed, please try again'
+        });
     }
 
-    res.status(200).json({
-        message:   `${medicines.length} medicine(s) at or below reorder level`,
+    return res.status(200).json({
+        message: `${medicines.length} medicine(s) at or below reorder level`,
         medicines: medicines.map(m => m.toObject({ getters: true }))
     });
 };
@@ -487,12 +559,16 @@ const checkMedicineAvailability = async (req, res, next) => {
     try {
         prescription = await Prescription.findById(prescriptionId);
     } catch (err) {
-        return next(new HttpError('Fetching prescription failed, please try again', 500));
-    }
+    return res.status(500).json({
+        message: 'Fetching prescription failed, please try again'
+    });
+}
 
     if (!prescription) {
-        return next(new HttpError('Could not find a prescription for the given ID', 404));
-    }
+    return res.status(404).json({
+        message: 'Could not find a prescription for the given ID'
+    });
+}
 
     const availabilityReport = [];
 
@@ -501,8 +577,10 @@ const checkMedicineAvailability = async (req, res, next) => {
         try {
             inventoryItem = await Medicine.findById(med.MedicineId);
         } catch (err) {
-            return next(new HttpError('Checking inventory failed, please try again', 500));
-        }
+    return res.status(500).json({
+        message: 'Checking inventory failed, please try again'
+    });
+}
 
         const isAvailable = inventoryItem && inventoryItem.StockQuantity >= med.Quantity;
 
@@ -531,24 +609,38 @@ const checkMedicineAvailability = async (req, res, next) => {
 const getExpiringMedicines = async (req, res, next) => {
     console.log("GET request — expiring medicines");
 
-    const days  = parseInt(req.query.days) || 30;
+    const days = parseInt(req.query.days) || 30;
     const today = new Date();
     const limit = new Date();
     limit.setDate(today.getDate() + days);
 
     let medicines;
+
     try {
         medicines = await Medicine.find({
-            IsActive:   true,
-            ExpiryDate: { $gte: today, $lte: limit }
+            IsActive: true,
+            ExpiryDate: {
+                $gte: today,
+                $lte: limit
+            }
         }).sort({ ExpiryDate: 1 });
     } catch (err) {
-        return next(new HttpError('Fetching expiring medicines failed, please try again', 500));
+        return res.status(500).json({
+            message: 'Fetching expiring medicines failed, please try again'
+        });
+    }
+
+    if (!medicines || medicines.length === 0) {
+        return res.status(404).json({
+            message: 'No expiring medicines found'
+        });
     }
 
     res.status(200).json({
-        message:   `${medicines.length} medicine(s) expiring within ${days} days`,
-        medicines: medicines.map(m => m.toObject({ getters: true }))
+        message: `${medicines.length} medicine(s) expiring within ${days} days`,
+        medicines: medicines.map(medicine =>
+            medicine.toObject({ getters: true })
+        )
     });
 };
 
