@@ -18,7 +18,7 @@ app.use(express.json());
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false }));
 
-//Creation of Middleware
+// Creation of Middleware
 app.use(AdminRoutes);
 app.use(ReceptionistRoutes);
 app.use(DoctorRoutes);
@@ -70,4 +70,3 @@ mongoose.connect(process.env.MONGO_URI).then(() => {
     console.log('Database Connection Failed');
     console.log(error);
 });
-

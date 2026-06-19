@@ -20,3 +20,4 @@ router.patch(
 router.patch('/tests/:testid/report', labTechnicianController.generateLabReport);
 
 module.exports = router;
+

@@ -1,9 +1,133 @@
-const { Staff, Doctor, Ambulance } = require("../models/admin-model");
+const { Staff, Doctor, Ambulance } = require("../models/admin-models");
+const { validationResult } = require('express-validator');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
+
+//AUTHENTICATION CONTROLLER
+//TO REGISTER A USER 
+const register = async (req, res, next) => {
+    const {
+        StaffName,
+        StaffPhone,
+        StaffEmail,
+        StaffUsername,
+        StaffPassword,
+        StaffRole,
+        Specialization,
+        ConsultationFee
+    } = req.body;
+
+    try {
+        const existingUser = await Staff.findOne({
+            StaffUsername
+        });
+
+        if (existingUser) {
+            return next({
+                code: 400,
+                message: "Username already exists"
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(StaffPassword, 12);
+        const staff = new Staff({
+            StaffName,
+            StaffPhone,
+            StaffEmail,
+            StaffUsername,
+            StaffPassword: hashedPassword,
+            StaffRole
+        });
+
+        await staff.save();
+        if (StaffRole === "Doctor") {
+            const { Doctor } = require("../models/admin-models");
+            const doctor = new Doctor({
+                StaffId: staff._id,
+                Specialization,
+                ConsultationFee
+            });
+
+            await doctor.save();
+        }
+
+        res.status(201).json({
+            success: true,
+            message: `${StaffRole} registered successfully`,
+            staffId: staff._id,
+            username: staff.StaffUsername
+        });
+
+    } catch (error) {
+        return next({
+            code: 500,
+            message: "Unable to register user"
+        });
+    }
+};
+
+//USER LOGIN
+const login = async (req, res, next) => {
+    const { StaffUsername, StaffPassword } = req.body;
+    try {
+        const existingUser = await Staff.findOne({ StaffUsername });
+        if (!existingUser) {
+            return next({
+                code: 401,
+                message: "Invalid Username"
+            });
+        }
+
+        const isValidPassword = await bcrypt.compare(
+            StaffPassword,
+            existingUser.StaffPassword
+        )
+
+        if (!isValidPassword) {
+            return next({
+                code: 401,
+                message: "Invalid Password"
+            })
+        }
+
+        const token = jwt.sign({
+            userId: existingUser._id,
+            username: existingUser.StaffUsername,
+            role: existingUser.StaffRole
+        },
+        process.env.JWT_SECRET,
+        {
+            expiresIn: "8h"
+        }
+    );
+
+    res.json({
+        success: true,
+        token,
+        username: existingUser.StaffUsername,
+        role: existingUser.StaffRole
+    });
+    } catch (error) {
+        return next ({
+            code: 500,
+            message: "Login Failed!"
+        });
+    }
+};
+
+//==========================================================================
 
 //CRUD OPERATIONS FOR STAFF AND DOCTORS
 //TO CREATE NEW STAFF/DOCTOR
 const createStaff = async(req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            errors: errors.array()
+        });
+    }
+
     try {
         const {
             StaffName,
@@ -16,20 +140,34 @@ const createStaff = async(req, res) => {
             ConsultationFee
         } = req.body;
 
-        //Validation for doctor
-        if (StaffRole === "Doctor" && 
-           (!Specialization || ConsultationFee === null)){
+        //Duplicate check
+        const existingStaff = await Staff.findOne({
+            $or: [{ StaffEmail }, { StaffUsername }, { StaffPhone }]
+        });
+
+        if (existingStaff) {
             return res.status(400).json({
+                message: "Email, Username or Phone Number already exists"
+            });
+        }
+
+        //Validation for doctor
+        if (StaffRole === "Doctor" && (!Specialization || ConsultationFee == null)){
+            return res.status(400).json({
+                success: false,
                 message: "Specialization and Consultation Fee are required for Doctors"
             });
         } 
+
+        //Hash Password
+        const hashedPassword = await bcrypt.hash(StaffPassword, 12);
 
         const staff = await Staff.create({
             StaffName,
             StaffPhone,
             StaffEmail,
             StaffUsername,
-            StaffPassword,
+            StaffPassword: hashedPassword,
             StaffRole
         });
 
@@ -42,12 +180,17 @@ const createStaff = async(req, res) => {
             });
         }
 
+        const staffResponse = staff.toObject();
+        delete staffResponse.StaffPassword;
+
         res.status(201).json({
+            success: true,
             message: `${StaffRole} created successfully`,
-            staff
+            data: staffResponse
         });
     } catch (error) {
         res.status(500).json({
+            success: false,
             message: error.message
         });
     }
@@ -56,8 +199,34 @@ const createStaff = async(req, res) => {
 //TO GET ALL STAFFS
 const getStaff = async(req, res) => {
     try {
-        const staff = await Staff.find();
-        res.status(200).json(staff);
+        const filter = {};
+
+        // Filtering
+        if (req.query.role) {
+            filter.StaffRole = req.query.role;
+        }
+
+        if (req.query.status) {
+            filter.Status = req.query.status;
+        }
+
+        // Pagination
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+
+        const skip = (page - 1) * limit;
+        const staff = await Staff.find(filter)
+            .skip(skip)
+            .limit(limit);
+
+        const totalStaff = await Staff.countDocuments(filter);
+        res.status(200).json({
+            currentPage: page,
+            totalPages: Math.ceil(totalStaff / limit),
+            totalStaff,
+            staff
+        });
+
     } catch (error) {
         res.status(500).json({
             message: error.message
@@ -82,8 +251,27 @@ const getStaffByID = async(req, res) => {
     }
 };
 
+//TO GET ALL DOCTORS
+const getDoctors = async (req, res) => {
+    try {
+        const doctors = await Doctor.find().populate("StaffId");
+        res.status(200).json(doctors);
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
+
 //TO UPDATE A STAFF
 const updateStaff = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            errors: errors.array()
+        });
+    }
+
     try {
         const staff = await Staff.findByIdAndUpdate(
             req.params.id,
@@ -109,7 +297,6 @@ const updateStaff = async (req, res) => {
     }
 };
 
-//COMPLETE DELETION OR ONLY JUST DEACTIVATION?
 //TO DEACTIVATE A STAFF
 const deactivateStaff = async (req, res) => {
     try {
@@ -137,11 +324,49 @@ const deactivateStaff = async (req, res) => {
     }
 };
 
+//TO ACTIVATE A STAFF
+const activateStaff = async (req, res) => {
+    try {
+        const staff = await Staff.findByIdAndUpdate(
+            req.params.id,
+            {
+                Status: "Active"
+            },
+            {
+                new: true
+            }
+        );
+
+        if (!staff) {
+            return res.status(404).json({
+                message: "Staff not found"
+            });
+        }
+
+        res.status(200).json({
+            message: "Staff activated successfully",
+            staff
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
+
 //==========================================================================
 
 //CRUD OPERATIONS FOR AMBULANCE
 //TO CREATE AN AMBULANCE 
 const createAmbulance = async(req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            errors: errors.array()
+        });
+    }
+
     try {
         const {
             VehicleNumber,
@@ -199,6 +424,13 @@ const getAmbulanceById = async (req, res) => {
 
 //TO UPDATE AN AMBULANCE
 const updateAmbulance = async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({
+            errors: errors.array()
+        });
+    }
+
     try {
         const {
             VehicleNumber,
@@ -265,16 +497,53 @@ const deactivateAmbulance = async (req, res) => {
     }
 };
 
+//TO ACTIVATE AN AMBULANCE
+const activateAmbulance = async (req, res) => {
+    try {
+        const ambulance = await Ambulance.findByIdAndUpdate(
+            req.params.id,
+            {
+                Status: "Available"
+            },
+            {
+                new: true
+            }
+        );
+
+        if (!ambulance) {
+            return res.status(404).json({
+                message: "Ambulance not found"
+            });
+        }
+
+        res.status(200).json({
+            message: "Ambulance activated successfully",
+            ambulance
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
+
 //==========================================================================
+
+exports.register = register;
+exports.login = login;
 
 exports.createStaff = createStaff;
 exports.getStaff = getStaff;
 exports.getStaffByID = getStaffByID;
+exports.getDoctors = getDoctors; 
 exports.updateStaff = updateStaff;
 exports.deactivateStaff = deactivateStaff;
+exports.activateStaff = activateStaff;
 
 exports.createAmbulance = createAmbulance;
 exports.getAmbulances = getAmbulances;
 exports.getAmbulanceById = getAmbulanceById;
 exports.updateAmbulance = updateAmbulance;
 exports.deactivateAmbulance = deactivateAmbulance;
+exports.activateAmbulance = activateAmbulance;

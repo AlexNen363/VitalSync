@@ -1,44 +1,118 @@
 const express = require("express");
 const router = express.Router();
 
-const doctorController = require("../controller/doctor-controller");
+const {
+    Appointment,
+    Consultation,
+    LabTest,
+    Prescription
+} = require("../models/doctor-models");
 
-const authMiddleware = require("../middlewares/authMiddleware");
-const roleMiddleware = require("../middlewares/roleMiddleware");
 
-router.get(
-    "/",
-    authMiddleware,
-    roleMiddleware("Admin", "Doctor"),
-    doctorController.getDoctors
-);
+// ======================
+// View Scheduled Appointments
+// ======================
+router.get("/appointments", async (req, res) => {
+    try {
+        const data = await Appointment.find({ status: "Scheduled" })
+            .populate("patientId")
+            .populate("doctorId");
 
-router.get(
-    "/:docid",
-    authMiddleware,
-    roleMiddleware("Admin", "Doctor"),
-    doctorController.getDoctorById
-);
+        res.status(200).json({
+            success: true,
+            data
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
 
-router.post(
-    "/",
-    authMiddleware,
-    roleMiddleware("Admin"),
-    doctorController.createDoctor
-);
 
-router.patch(
-    "/:docid",
-    authMiddleware,
-    roleMiddleware("Admin"),
-    doctorController.updateDoctor
-);
+// ======================
+// Review Patient Medical History
+// ======================
+router.get("/history/:patientId", async (req, res) => {
+    try {
+        const data = await Consultation.find({
+            patientId: req.params.patientId
+        });
 
-router.delete(
-    "/:docid",
-    authMiddleware,
-    roleMiddleware("Admin"),
-    doctorController.deleteDoctor
-);
+        res.status(200).json({
+            success: true,
+            data
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
+
+
+// ======================
+// Record Consultation Notes
+// ======================
+router.post("/consultation", async (req, res) => {
+    try {
+        const data = new Consultation(req.body);
+        await data.save();
+
+        res.status(201).json({
+            success: true,
+            data
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
+
+
+// ======================
+// Request Laboratory Tests
+// ======================
+router.post("/labtest", async (req, res) => {
+    try {
+        const data = new LabTest(req.body);
+        await data.save();
+
+        res.status(201).json({
+            success: true,
+            data
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
+
+
+// ======================
+// Create Prescription
+// ======================
+router.post("/prescription", async (req, res) => {
+    try {
+        const data = new Prescription(req.body);
+        await data.save();
+
+        res.status(201).json({
+            success: true,
+            data
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
 
 module.exports = router;
