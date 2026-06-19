@@ -1,7 +1,7 @@
 const express = require('express');
 const { check } = require('express-validator');
 const router = express.Router();
-const labTechnicianController = require('../controllers/lab-technician-controller');
+const labTechnicianController = require('../controller/labtech-controller');
 
 // UC-LAB-01: View pending tests
 router.get('/tests/pending', labTechnicianController.getPendingTests);
