@@ -1,109 +1,90 @@
 const mongoose = require("mongoose");
 
-
-// Appointment Schema
-const appointmentSchema = new mongoose.Schema({
-    patientId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Patient",
-        required: true
-    },
-    doctorId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Doctor",
-        required: true
-    },
-    appointmentDate: {
-        type: Date,
-        required: true
-    },
-    status: {
-        type: String,
-        enum: ["Scheduled", "Completed", "Cancelled"],
-        default: "Scheduled"
-    }
-});
-
-
 // Consultation Schema
 const consultationSchema = new mongoose.Schema({
-    patientId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Patient",
-        required: true
-    },
-    doctorId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Doctor",
-        required: true
-    },
-    notes: {
-        type: String,
-        required: true
-    },
-    date: {
-        type: Date,
-        default: Date.now
-    }
+  patientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Patient",
+    required: true,
+  },
+  doctorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Doctor",
+    required: true,
+  },
+  notes: {
+    type: String,
+    required: true,
+  },
+  date: {
+    type: Date,
+    default: Date.now,
+  },
 });
-
 
 // Lab Test Schema
 const labTestSchema = new mongoose.Schema({
-    patientId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Patient",
-        required: true
-    },
-    doctorId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Doctor",
-        required: true
-    },
-    testName: {
-        type: String,
-        required: true
-    },
-    status: {
-        type: String,
-        default: "Pending"
-    }
+  patientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Patient",
+    required: true,
+  },
+  doctorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Doctor",
+    required: true,
+  },
+  testName: {
+    type: String,
+    required: true,
+  },
+  status: {
+    type: String,
+    default: "Pending",
+  },
 });
-
 
 // Prescription Schema
 const prescriptionSchema = new mongoose.Schema({
-    patientId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Patient",
-        required: true
+  patientId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Patient",
+    required: true,
+  },
+  doctorId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Doctor",
+    required: true,
+  },
+  medicines: [
+    {
+      medicineName: String,
+      dosage: String,
+      frequency: String,
+      duration: String,
     },
-    doctorId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Doctor",
-        required: true
-    },
-    medicines: [{
-        medicineName: String,
-        dosage: String,
-        frequency: String,
-        duration: String
-    }],
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+  ],
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
+// Models
+const Consultation =
+  mongoose.models.Consultation ||
+  mongoose.model("Consultation", consultationSchema);
 
-const Appointment = mongoose.model("Appointment", appointmentSchema);
-const Consultation = mongoose.model("Consultation", consultationSchema);
-const LabTest = mongoose.model("LabTest", labTestSchema);
-const Prescription = mongoose.model("Prescription", prescriptionSchema);
+const LabTest =
+  mongoose.models.LabTest ||
+  mongoose.model("LabTest", labTestSchema);
+
+const Prescription =
+  mongoose.models.Prescription ||
+  mongoose.model("Prescription", prescriptionSchema);
 
 module.exports = {
-    Appointment,
-    Consultation,
-    LabTest,
-    Prescription
+  Consultation,
+  LabTest,
+  Prescription,
 };
