@@ -5,7 +5,7 @@ const {
     AmbulanceRequest
 } = require("../models/receptionist-models");
 
-const Doctor = require("../models/doctor-models");
+// const Doctor = require("../models/doctor-models");
 
 // ======================
 // REGISTER PATIENT
