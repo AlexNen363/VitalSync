@@ -1,128 +1,171 @@
-const mongoose = require('mongoose');
 const { validationResult } = require('express-validator');
-const HttpError = require('../models/http-error');
-const LabTest = require('../models/lab-test');
+const LabTest = require('../models/labtech-models');
 
-// UC-LAB-01 (Step 1): View all pending lab tests
-const getPendingTests = async (req, res, next) => {
-    let pendingTests;
+// View Lab Test Requests
+const getPendingTests = async (req, res) => {
     try {
-        pendingTests = await LabTest.find({ Status: 'Pending' })
+        const pendingTests = await LabTest.find({ Status: 'Pending' })
             .populate('PatientId', 'name')
             .populate('RequestedBy', 'name');
+
+        if (!pendingTests.length) {
+            return res.status(404).json({
+                message: 'No pending lab tests found'
+            });
+        }
+
+        res.status(200).json({
+            pendingTests: pendingTests.map(test =>
+                test.toObject({ getters: true })
+            )
+        });
     } catch (err) {
-        return next(new HttpError('Fetching pending tests failed, please try again', 500));
+        res.status(500).json({
+            message: 'Failed to fetch pending lab tests'
+        });
     }
-
-    if (!pendingTests || pendingTests.length === 0) {
-        return next(new HttpError('No pending tests found', 404));
-    }
-
-    res.status(200).json({
-        pendingTests: pendingTests.map(t => t.toObject({ getters: true }))
-    });
 };
 
-// UC-LAB-01 (Step 2 & 3): Perform test — assign technician and record results
-const performLabTest = async (req, res, next) => {
+// Conduct Laboratory Test & Enter Results
+const performLabTest = async (req, res) => {
     const errors = validationResult(req);
+
     if (!errors.isEmpty()) {
-        console.log(errors);
-        return next(new HttpError(errors.array()[0].msg, 422));
+        return res.status(422).json({
+            message: errors.array()[0].msg
+        });
     }
 
     const testId = req.params.testid;
     const { TechnicianId, Results } = req.body;
 
-    let labTest;
     try {
-        labTest = await LabTest.findById(testId);
-    } catch (err) {
-        return next(new HttpError('Fetching test failed, please try again', 500));
-    }
+        const labTest = await LabTest.findById(testId);
 
-    if (!labTest) {
-        return next(new HttpError('Could not find a lab test for the given ID', 404));
-    }
+        if (!labTest) {
+            return res.status(404).json({
+                message: 'Lab test not found'
+            });
+        }
 
-    if (labTest.Status === 'Completed' || labTest.Status === 'Cancelled') {
-        return next(new HttpError(`Test cannot be performed — current status is "${labTest.Status}"`, 400));
-    }
+        if (
+            labTest.Status === 'Completed' ||
+            labTest.Status === 'Cancelled'
+        ) {
+            return res.status(400).json({
+                message: `Cannot perform test. Current status: ${labTest.Status}`
+            });
+        }
 
-    labTest.TechnicianId = TechnicianId;
-    labTest.Results = Results;
-    labTest.Status = 'Results Entered';
+        labTest.TechnicianId = TechnicianId;
+        labTest.Results = Results;
+        labTest.Status = 'Results Entered';
 
-    try {
         await labTest.save();
-    } catch (err) {
-        return next(new HttpError('Performing lab test failed, please try again', 500));
-    }
 
-    res.status(200).json({
-        message: 'Lab test performed and results recorded successfully',
-        labTest: labTest.toObject({ getters: true })
-    });
+        res.status(200).json({
+            message: 'Lab test completed and results entered successfully',
+            labTest: labTest.toObject({ getters: true })
+        });
+    } catch (err) {
+        res.status(500).json({
+            message: 'Failed to perform laboratory test'
+        });
+    }
 };
 
-// UC-LAB-02 (Steps 1–4): Enter results and generate report
-const generateLabReport = async (req, res, next) => {
+// Generate Lab Report & Update Test Status
+const generateLabReport = async (req, res) => {
     const errors = validationResult(req);
+
     if (!errors.isEmpty()) {
-        console.log(errors);
-        return next(new HttpError(errors.array()[0].msg, 422));
+        return res.status(422).json({
+            message: errors.array()[0].msg
+        });
     }
 
     const testId = req.params.testid;
 
-    let labTest;
     try {
-        labTest = await LabTest.findById(testId)
+        const labTest = await LabTest.findById(testId)
             .populate('PatientId')
             .populate('RequestedBy');
+
+        if (!labTest) {
+            return res.status(404).json({
+                message: 'Lab test not found'
+            });
+        }
+
+        if (!labTest.Results) {
+            return res.status(400).json({
+                message: 'Test results have not been entered yet'
+            });
+        }
+
+        if (labTest.ReportGenerated) {
+            return res.status(400).json({
+                message: 'Report already generated'
+            });
+        }
+
+        labTest.ReportGenerated = true;
+        labTest.ReportGeneratedAt = new Date();
+        labTest.Status = 'Completed';
+
+        await labTest.save();
+
+        const report = {
+            TestID: labTest.TestID,
+            TestType: labTest.TestType,
+            Patient: labTest.PatientId,
+            RequestedBy: labTest.RequestedBy,
+            Results: labTest.Results,
+            ReportGeneratedAt: labTest.ReportGeneratedAt,
+            Status: labTest.Status
+        };
+
+        res.status(200).json({
+            message: 'Lab report generated successfully',
+            report
+        });
     } catch (err) {
-        return next(new HttpError('Fetching test failed, please try again', 500));
+        res.status(500).json({
+            message: 'Failed to generate lab report'
+        });
     }
+};
 
-    if (!labTest) {
-        return next(new HttpError('Could not find a lab test for the given ID', 404));
-    }
-
-    if (!labTest.Results || labTest.Results.size === 0) {
-        return next(new HttpError('Cannot generate report: test results have not been entered yet', 400));
-    }
-
-    if (labTest.ReportGenerated) {
-        return next(new HttpError('Report has already been generated for this test', 400));
-    }
-
-    labTest.ReportGenerated = true;
-    labTest.ReportGeneratedAt = new Date();
-    labTest.Status = 'Completed';
+// Update Test Status
+const updateTestStatus = async (req, res) => {
+    const testId = req.params.testid;
+    const { Status } = req.body;
 
     try {
+        const labTest = await LabTest.findById(testId);
+
+        if (!labTest) {
+            return res.status(404).json({
+                message: 'Lab test not found'
+            });
+        }
+
+        labTest.Status = Status;
+
         await labTest.save();
+
+        res.status(200).json({
+            message: 'Test status updated successfully',
+            labTest: labTest.toObject({ getters: true })
+        });
     } catch (err) {
-        return next(new HttpError('Generating report failed, please try again', 500));
+        res.status(500).json({
+            message: 'Failed to update test status'
+        });
     }
-
-    // Report object accessible by doctor via PatientId reference
-    const report = {
-        TestID: labTest.TestID,
-        TestType: labTest.TestType,
-        Patient: labTest.PatientId,
-        RequestedBy: labTest.RequestedBy,
-        Results: Object.fromEntries(labTest.Results),
-        ReportGeneratedAt: labTest.ReportGeneratedAt,
-        Status: labTest.Status
-    };
-
-    res.status(200).json({
-        message: 'Lab report generated and stored in patient records successfully',
-        report: report
-    });
 };
 
 exports.getPendingTests = getPendingTests;
 exports.performLabTest = performLabTest;
 exports.generateLabReport = generateLabReport;
+exports.updateTestStatus = updateTestStatus;

@@ -1,11 +1,68 @@
 const express = require('express');
 const router  = express.Router();
 const { check } = require('express-validator');
-const pharmacistController = require('../controllers/pharmacist-controller');
+const pharmacistController = require('../controller/pharmacist-controller');
 
-// ── UC-PHARM-01: Dispense Medicines ──────────────────────────────────────────
+// ── FUNCTION 1 : Manage Medicine Inventory ────────────────────────────────────
 
-// Step 1 — Review prescription
+router.get(
+    '/medicines',
+    pharmacistController.getAllMedicines
+);
+
+router.get(
+    '/medicines/:medicineid',
+    pharmacistController.getMedicineById
+);
+
+router.post(
+    '/medicines',
+    [
+        check('MedicineCode').notEmpty().withMessage('Medicine code is required'),
+        check('MedicineName').notEmpty().withMessage('Medicine name is required'),
+        check('Category').notEmpty().withMessage('Category is required'),
+        check('StockQuantity').isInt({ min: 0 }).withMessage('Stock quantity must be 0 or more'),
+        check('Unit').notEmpty().withMessage('Unit is required'),
+        check('ExpiryDate').isISO8601().withMessage('A valid expiry date is required (YYYY-MM-DD)'),
+        check('ReorderLevel').optional().isInt({ min: 0 }).withMessage('Reorder level must be 0 or more')
+    ],
+    pharmacistController.addMedicine
+);
+
+router.put(
+    '/medicines/:medicineid',
+    [
+        check('MedicineName').optional().notEmpty().withMessage('Medicine name cannot be empty'),
+        check('Category').optional().notEmpty().withMessage('Category cannot be empty'),
+        check('ExpiryDate').optional().isISO8601().withMessage('A valid expiry date is required (YYYY-MM-DD)'),
+        check('ReorderLevel').optional().isInt({ min: 0 }).withMessage('Reorder level must be 0 or more')
+    ],
+    pharmacistController.updateMedicine
+);
+
+router.delete(
+    '/medicines/:medicineid',
+    pharmacistController.deleteMedicine
+);
+
+// ── FUNCTION 2 : Update Medicine Stock ───────────────────────────────────────
+
+router.patch(
+    '/medicines/:medicineid/stock',
+    [
+        check('AdjustmentType')
+            .notEmpty()
+            .isIn(['ADD', 'SUBTRACT'])
+            .withMessage('AdjustmentType must be ADD or SUBTRACT'),
+        check('Quantity')
+            .isInt({ min: 1 })
+            .withMessage('Quantity must be at least 1')
+    ],
+    pharmacistController.updateMedicineStock
+);
+
+// ── FUNCTION 3 : Dispense Medicines ──────────────────────────────────────────
+
 router.get(
     '/prescription/:prescriptionid',
     pharmacistController.getPrescriptionById
