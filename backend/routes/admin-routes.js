@@ -2,6 +2,8 @@ const express = require('express');
 const { check } = require('express-validator');
 const router = express.Router();
 
+console.log("ADMIN ROUTES LOADED");
+
 const adminController = require('../controller/admin-controller');
 const { checkAuth, checkRole } = require('../middlewares/admin-middleware')
 

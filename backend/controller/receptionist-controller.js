@@ -273,6 +273,69 @@ const getAvailableDoctors = async (req, res) => {
 
     }
 };
+// ======================
+// GET PATIENTS
+// ======================
+
+const getPatients = async (req, res) => {
+    try {
+        const patients = await Patient.find();
+
+        res.status(200).json({
+            success: true,
+            patients
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch patients"
+        });
+    }
+};
+// ======================
+// GET BILLS
+// ======================
+const getBills = async (req, res) => {
+    try {
+        const bills = await Bill.find();
+
+        res.status(200).json({
+            success: true,
+            bills
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+// ======================
+// AMBULANCE REQUEST
+// ======================
+const getAmbulanceRequests = async (
+    req,
+    res
+) => {
+    try {
+
+        const requests =
+            await AmbulanceRequest.find();
+
+        res.status(200).json({
+            success: true,
+            requests
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
 
 module.exports = {
     registerPatient,
@@ -282,5 +345,8 @@ module.exports = {
     requestAmbulance,
     getAppointments,
     updateAppointmentStatus,
-    getAvailableDoctors
+    getAvailableDoctors,
+    getPatients,
+    getBills,
+    getAmbulanceRequests
 };

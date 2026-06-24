@@ -1,18 +1,22 @@
 const express = require('express');
 const mongoose = require('mongoose');
 require('dotenv').config();
+const cors = require('cors');
 
 const dns = require('dns');
 const app = express();
 
 const AdminRoutes = require('./routes/admin-routes');
 const ReceptionistRoutes = require('./routes/receptionist-routes');
-const DoctorRoutes = require('./routes/doctor-routes');
-const PharmacistRoutes = require('./routes/pharmacist-routes');
-const LabTechRoutes = require('./routes/labtech-routes');
+// const DoctorRoutes = require('./routes/doctor-routes');
+// const PharmacistRoutes = require('./routes/pharmacist-routes');
+// const LabTechRoutes = require('./routes/labtech-routes');
 
 // Parse JSON Data
 app.use(express.json());
+
+// Enable CORS
+app.use(cors());
 
 // Body Parser
 const bodyParser = require('body-parser');
@@ -21,9 +25,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Creation of Middleware
 app.use(AdminRoutes);
 app.use(ReceptionistRoutes);
-app.use(DoctorRoutes);
-app.use(PharmacistRoutes);
-app.use(LabTechRoutes);
+// app.use(DoctorRoutes);
+// app.use(PharmacistRoutes);
+// app.use(LabTechRoutes);
 
 // ======================
 // HOME ROUTE

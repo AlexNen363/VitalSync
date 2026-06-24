@@ -15,7 +15,10 @@ const {
     requestAmbulance,
     getAppointments,
     updateAppointmentStatus,
-    getAvailableDoctors
+    getAvailableDoctors,
+    getPatients,
+    getBills,
+    getAmbulanceRequests
 } = require("../controller/receptionist-controller");
 // ======================
 // PATIENT ROUTES
@@ -23,15 +26,11 @@ const {
 
 router.post(
     "/registerPatient",
-    checkAuth,
-    checkRole("Receptionist"),
     registerPatient
 );
 
 router.get(
     "/searchPatient",
-    checkAuth,
-    checkRole("Receptionist"),
     searchPatient
 );
 
@@ -41,20 +40,14 @@ router.get(
 
 router.post(
     "/bookAppointment",
-    checkAuth,
-    checkRole("Receptionist"),
     bookAppointment
 );
 router.get(
     "/appointments",
-    checkAuth,
-    checkRole("Receptionist"),
     getAppointments
 );
 router.patch(
     "/appointments/:id/status",
-    checkAuth,
-    checkRole("Receptionist"),
     updateAppointmentStatus
 );
 // ======================
@@ -63,8 +56,6 @@ router.patch(
 
 router.post(
     "/generateBill",
-    checkAuth,
-    checkRole("Receptionist"),
     generateBill
 );
 
@@ -74,8 +65,6 @@ router.post(
 
 router.post(
     "/requestAmbulance",
-    checkAuth,
-    checkRole("Receptionist"),
     requestAmbulance
 );
 
@@ -85,9 +74,35 @@ router.post(
 
 router.get(
     "/availableDoctors",
-    checkAuth,
-    checkRole("Receptionist"),
     getAvailableDoctors
+);
+// ======================
+// GET PATIENTS
+// ======================
+router.get(
+    "/patients",
+    getPatients
+);
+// ======================
+// GET BILLS
+// ======================
+router.get(
+    "/bills",
+    getBills
+);
+// ======================
+// GET AMBULANCE
+// ======================
+router.get(
+    "/ambulanceRequests",
+    getAmbulanceRequests
+);
+// ======================
+// REQUEST AMBULANCE
+// ======================
+router.post(
+    "/requestAmbulance",
+    requestAmbulance
 );
 
 module.exports = router;
