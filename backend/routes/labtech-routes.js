@@ -1,5 +1,5 @@
-<<<<<<< HEAD
-=======
+HEAD
+
 const express = require('express');
 const { check } = require('express-validator');
 const router = express.Router();
@@ -21,6 +21,4 @@ router.patch(
 // UC-LAB-02: Generate lab report
 router.patch('/tests/:testid/report', labTechnicianController.generateLabReport);
 
-module.exports = router;
-
->>>>>>> fec9259eabf998afec4e7780e027eccb520f092b
+module.exports = router; 

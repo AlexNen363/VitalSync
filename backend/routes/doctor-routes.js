@@ -1,94 +1,104 @@
 const express = require("express");
 const router = express.Router();
 
+const { Appointment } = require("../models/doctor-models");
+
 const {
-  Consultation,
-  LabTest,
-  Prescription,
-} = require("../models/doctor-models");
-
+  getPatientHistory,
+  addConsultation,
+  requestLabTest,
+  createPrescription,
+} = require("../controller/doctor-controller");
 
 // ======================
-// Review Patient Medical History
+// APPOINTMENTS
 // ======================
-router.get("/history/:patientId", async (req, res) => {
+
+// GET ALL APPOINTMENTS
+router.get("/appointments", async (req, res) => {
   try {
-    const data = await Consultation.find({
-      patientId: req.params.patientId,
-    });
-
-    res.status(200).json({
-      success: true,
-      data,
-    });
+    const data = await Appointment.find();
+    res.json(data);
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ message: err.message });
   }
 });
 
-
-// ======================
-// Record Consultation Notes
-// ======================
-router.post("/consultation", async (req, res) => {
+// CREATE APPOINTMENT
+router.post("/appointments", async (req, res) => {
   try {
-    const data = new Consultation(req.body);
-    await data.save();
+    const appointment = new Appointment(req.body);
 
-    res.status(201).json({
-      success: true,
-      data,
-    });
+    await appointment.save();
+
+    res.status(201).json(appointment);
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ message: err.message });
   }
 });
 
-
-// ======================
-// Request Laboratory Tests
-// ======================
-router.post("/labtest", async (req, res) => {
+// UPDATE STATUS
+router.put("/appointments/:id", async (req, res) => {
   try {
-    const data = new LabTest(req.body);
-    await data.save();
+    const updated = await Appointment.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
 
-    res.status(201).json({
-      success: true,
-      data,
-    });
+    res.json(updated);
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ message: err.message });
   }
 });
 
-
-// ======================
-// Create Prescription
-// ======================
-router.post("/prescription", async (req, res) => {
+// DELETE APPOINTMENT
+router.delete("/appointments/:id", async (req, res) => {
   try {
-    const data = new Prescription(req.body);
-    await data.save();
+    await Appointment.findByIdAndDelete(req.params.id);
 
-    res.status(201).json({
+    res.json({
       success: true,
-      data,
+      message: "Appointment deleted",
     });
   } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ======================
+// CONSULTATIONS
+// ======================
+
+router.post("/consultations", addConsultation);
+
+// ======================
+// LAB TESTS
+// ======================
+
+router.post("/labtests", requestLabTest);
+
+// ======================
+// PRESCRIPTIONS
+// ======================
+
+router.post("/prescriptions", createPrescription);
+
+// ======================
+// PATIENT HISTORY
+// ======================
+
+router.get("/history/:patientId", getPatientHistory);
+// GET ALL APPOINTMENTS
+router.get("/appointments", async (req, res) => {
+  try {
+    const data = await Appointment.find();
+
+    console.log("Appointments from DB:", data);
+
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

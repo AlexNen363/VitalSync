@@ -1,72 +1,33 @@
-const express = require('express');
-const mongoose = require('mongoose');
-require('dotenv').config();
+const express = require("express");
+const mongoose = require("mongoose");
+const dns = require("dns");
+const cors = require("cors");
+require("dotenv").config();
 
-const dns = require('dns');
-const app = express();
+const app = express(); // MUST come before app.use()
 
-const AdminRoutes = require('./routes/admin-routes');
- const ReceptionistRoutes = require('./routes/receptionist-routes');
-const DoctorRoutes = require('./routes/doctor-routes');
- const PharmacistRoutes = require('./routes/pharmacist-routes');
- const LabTechRoutes = require('./routes/labtech-routes');
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
-// Parse JSON Data
+const DoctorRoutes = require("./routes/doctor-routes");
+
+app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Body Parser
-const bodyParser = require('body-parser');
-app.use(bodyParser.urlencoded({ extended: false }));
+// DOCTOR MODULE
+app.use("/api/doctor", DoctorRoutes);
 
-// Creation of Middleware
-app.use(AdminRoutes);
-app.use(ReceptionistRoutes);
-app.use(DoctorRoutes);
- app.use(PharmacistRoutes);
- app.use(LabTechRoutes);
-
-// ======================
-// HOME ROUTE
-// ======================
-
-app.get('/', (req, res) => {
-    res.status(200).json({
-        message: 'VitalSync Clinical Management System API Running'
-    });
+app.get("/", (req, res) => {
+  res.json({ message: "VitalSync API Running" });
 });
 
-// ======================
-// ERROR HANDLING
-// ======================
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB Connected");
 
-app.use((error, req, res, next) => {
-    if (res.headersSent) {
-        return next(error);
-    }
-
-    res.status(error.code || 500);
-    res.json({
-        message: error.message || 'An unknown error occurred!'
-    });
-});
-
-// ======================
-// DATABASE CONNECTION
-// ======================
-
-dns.setServers([
-    '8.8.8.8',
-    '8.8.4.4'
-]);
-
-mongoose.connect(process.env.MONGO_URI).then(() => {
-    console.log('MongoDB Connected Successfully');
     app.listen(process.env.PORT || 5000, () => {
-        console.log(
-            `Server Running On Port ${process.env.PORT || 5000}`
-        );
+      console.log("Server running on port 5000");
     });
-}).catch((error) => {
-    console.log('Database Connection Failed');
-    console.log(error);
-});
+  })
+  .catch((err) => console.log(err));

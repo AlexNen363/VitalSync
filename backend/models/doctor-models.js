@@ -1,61 +1,69 @@
 const mongoose = require("mongoose");
 
-// Consultation Schema
+// ======================
+// CONSULTATION
+// ======================
 const consultationSchema = new mongoose.Schema({
   patientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Patient",
     required: true,
   },
-  doctorId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Doctor",
-    required: true,
-  },
+
   notes: {
     type: String,
     required: true,
   },
-  date: {
+
+  createdAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-// Lab Test Schema
+// ======================
+// LAB TEST
+// ======================
 const labTestSchema = new mongoose.Schema({
   patientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Patient",
     required: true,
   },
+
   doctorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Doctor",
     required: true,
   },
+
   testName: {
     type: String,
     required: true,
   },
+
   status: {
     type: String,
     default: "Pending",
   },
 });
 
-// Prescription Schema
+// ======================
+// PRESCRIPTION
+// ======================
 const prescriptionSchema = new mongoose.Schema({
   patientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Patient",
     required: true,
   },
+
   doctorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Doctor",
     required: true,
   },
+
   medicines: [
     {
       medicineName: String,
@@ -64,13 +72,47 @@ const prescriptionSchema = new mongoose.Schema({
       duration: String,
     },
   ],
+
   createdAt: {
     type: Date,
     default: Date.now,
   },
 });
 
-// Models
+// ======================
+// APPOINTMENT
+// ======================
+const appointmentSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true,
+  },
+
+  age: {
+    type: Number,
+    required: true,
+  },
+
+  time: {
+    type: String,
+    required: true,
+  },
+
+  status: {
+    type: String,
+    enum: ["Confirmed", "Pending", "Completed"],
+    default: "Pending",
+  },
+
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// ======================
+// MODELS
+// ======================
 const Consultation =
   mongoose.models.Consultation ||
   mongoose.model("Consultation", consultationSchema);
@@ -83,8 +125,13 @@ const Prescription =
   mongoose.models.Prescription ||
   mongoose.model("Prescription", prescriptionSchema);
 
+const Appointment =
+  mongoose.models.Appointment ||
+  mongoose.model("Appointment", appointmentSchema);
+
 module.exports = {
   Consultation,
   LabTest,
   Prescription,
+  Appointment,
 };

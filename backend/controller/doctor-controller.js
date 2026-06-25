@@ -1,30 +1,12 @@
-const Appointment = require("../models/Appointment");
-const Consultation = require("../models/Consultation");
-const LabTest = require("../models/LabTest");
-const Prescription = require("../models/Prescription");
+const {
+  Consultation,
+  LabTest,
+  Prescription,
+} = require("../models/doctor-models");
 
-// View Scheduled Appointments
-const getAppointments = async (req, res) => {
-  try {
-    const appointments = await Appointment.find({
-      status: "Scheduled",
-    })
-      .populate("patientId")
-      .populate("doctorId");
-
-    res.status(200).json({
-      success: true,
-      appointments,
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-};
-
-// Review Patient Medical History
+// ======================
+// GET PATIENT HISTORY
+// ======================
 const getPatientHistory = async (req, res) => {
   try {
     const history = await Consultation.find({
@@ -43,7 +25,9 @@ const getPatientHistory = async (req, res) => {
   }
 };
 
-// Record Consultation Notes
+// ======================
+// SAVE CONSULTATION
+// ======================
 const addConsultation = async (req, res) => {
   try {
     const consultation = new Consultation(req.body);
@@ -62,7 +46,9 @@ const addConsultation = async (req, res) => {
   }
 };
 
-// Request Laboratory Tests
+// ======================
+// REQUEST LAB TEST
+// ======================
 const requestLabTest = async (req, res) => {
   try {
     const labTest = new LabTest(req.body);
@@ -81,7 +67,9 @@ const requestLabTest = async (req, res) => {
   }
 };
 
-// Create Prescription
+// ======================
+// CREATE PRESCRIPTION
+// ======================
 const createPrescription = async (req, res) => {
   try {
     const prescription = new Prescription(req.body);
@@ -101,7 +89,6 @@ const createPrescription = async (req, res) => {
 };
 
 module.exports = {
-  getAppointments,
   getPatientHistory,
   addConsultation,
   requestLabTest,
