@@ -1,29 +1,47 @@
-const express = require('express');
-const mongoose = require('mongoose');
+const express    = require('express');
+const mongoose   = require('mongoose');
+const cors       = require('cors');
+const bodyParser = require('body-parser');
+const dns        = require('dns');
 require('dotenv').config();
 
-const dns = require('dns');
 const app = express();
 
-const AdminRoutes = require('./routes/admin-routes');
-const ReceptionistRoutes = require('./routes/receptionist-routes');
-const DoctorRoutes = require('./routes/doctor-routes');
-const PharmacistRoutes = require('./routes/pharmacist-routes');
-const LabTechRoutes = require('./routes/labtech-routes');
+// ======================
+// CORS — MUST BE FIRST
+// ======================
 
-// Parse JSON Data
+app.use(cors({
+    origin: 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+
+
+
+// ======================
+// BODY PARSERS
+// ======================
+
 app.use(express.json());
-
-// Body Parser
-const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// Creation of Middleware
-app.use(AdminRoutes);
-app.use(ReceptionistRoutes);
-app.use(DoctorRoutes);
-app.use(PharmacistRoutes);
-app.use(LabTechRoutes);
+// ======================
+// ROUTES
+// ======================
+
+// const AdminRoutes       = require('./routes/admin-routes');
+// const ReceptionistRoutes = require('./routes/receptionist-routes');
+// const DoctorRoutes      = require('./routes/doctor-routes');
+const PharmacistRoutes  = require('./routes/pharmacist-routes');
+const LabTechRoutes     = require('./routes/labtech-routes');
+
+// app.use('/api/admin',        AdminRoutes);
+// app.use('/api/receptionist', ReceptionistRoutes);
+// app.use('/api/doctor',       DoctorRoutes);
+app.use('/api/pharmacist',   PharmacistRoutes);
+app.use('/api/labtech',      LabTechRoutes);
 
 // ======================
 // HOME ROUTE
@@ -51,7 +69,7 @@ app.use((error, req, res, next) => {
 });
 
 // ======================
-// DATABASE CONNECTION
+// DNS CONFIGURATION
 // ======================
 
 dns.setServers([
@@ -59,14 +77,18 @@ dns.setServers([
     '8.8.4.4'
 ]);
 
-mongoose.connect(process.env.MONGO_URI).then(() => {
-    console.log('MongoDB Connected Successfully');
-    app.listen(process.env.PORT || 5000, () => {
-        console.log(
-            `Server Running On Port ${process.env.PORT || 5000}`
-        );
+// ======================
+// DATABASE CONNECTION
+// ======================
+
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => {
+        console.log('✅ MongoDB Connected Successfully');
+        app.listen(process.env.PORT || 5000, () => {
+            console.log(`✅ Server Running On Port ${process.env.PORT || 5000}`);
+        });
+    })
+    .catch((error) => {
+        console.log('❌ Database Connection Failed');
+        console.log(error);
     });
-}).catch((error) => {
-    console.log('Database Connection Failed');
-    console.log(error);
-});
