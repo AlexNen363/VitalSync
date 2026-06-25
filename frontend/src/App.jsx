@@ -1,17 +1,30 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import './App.css'
-
+import DoctorDashboard from "./pages/doctor-pages/DoctorDashboard";
+import PatientDetails from "./pages/doctor-pages/PatientDetails";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<h1>Login Page</h1>} />
-        <Route path="/admin" element={<h1>AdminDashboard</h1>} />
-        <Route path="/receptionist" element={<h1>ReceptionistDashboard</h1>} />
-        <Route path="/doctor" element={<h1>DoctorDashboard</h1>} />
-        <Route path="/labtech" element={<h1>LabtechDashboard</h1>} />
-        <Route path="/pharmacist" element={<h1>PharmacistDashboard</h1>} />
+
+        {/* DEFAULT REDIRECT */}
+        <Route path="/" element={<DoctorDashboard />} />
+
+        {/* DASHBOARD */}
+        <Route path="/doctor" element={<DoctorDashboard />} />
+
+        {/* PATIENT EMR PAGE */}
+        <Route path="/patient/:id" element={<PatientDetails />} />
+
+        {/* APPOINTMENTS PAGE (placeholder) */}
+        <Route
+          path="/doctor/appointments"
+          element={<div>Appointments Page</div>}
+        />
+
+        {/* 404 fallback */}
+        <Route path="*" element={<div>404 Page Not Found</div>} />
+
       </Routes>
     </BrowserRouter>
   );
